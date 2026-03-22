@@ -6,7 +6,7 @@ from typing import List
 
 app = FastAPI(
     title="Sentiment Analysis API",
-    description="Анализ тональности текста - оценка отзывов о странах)",
+    description="Анализ тональности текста - оценка отзывов о странах",
     version="1.0.0"
 )
 
@@ -47,7 +47,7 @@ class StatsResponse(BaseModel):
 @app.get("/")
 async def root():
     return {
-        "message": "Sentiment Analysis API for Country Expert Agent",
+        "message": "Sentiment Analysis API",
         "endpoints": {
             "predict": "POST /predict - анализ одного текста",
             "batch": "POST /batch - анализ нескольких текстов",
