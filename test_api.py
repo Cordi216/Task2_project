@@ -8,7 +8,7 @@ def test_root():
     response = client.get("/")
     assert response.status_code == 200
     assert "message" in response.json()
-    assert "Country Expert Agent" in response.json()["message"]
+    assert "Sentiment Analysis API" in response.json()["message"]
 
 
 def test_health():
