@@ -1,17 +1,21 @@
-# country_agent.py
 import requests
+from langfuse import Langfuse, observe
 
-# API endpoints
+langfuse = Langfuse(
+    public_key="pk-lf-8329c8cc-2943-4cbf-8c47-4c29977a2e7f",
+    secret_key="sk-lf-88ca4538-d751-4cb7-a952-aa92bba86bf6",
+    host="https://cloud.langfuse.com"
+)
+
 SENTIMENT_API = "http://127.0.0.1:8000"
 LLM_API = "http://127.0.0.1:8001"
 
-# Примеры отзывов о странах (для демонстрации)
 REVIEWS = {
     "япония": [
         "Невероятная культура и вежливые люди, обязательно вернусь",
         "Дорогой транспорт и маленькие отели, но это того стоит",
-        "Сакура весной — это что-то невероятное",
-        "Языковой барьер сложный, но locals помогают",
+        "Сакура весной это что-то невероятное",
+        "Языковой барьер сложный, но переводчики помогают",
         "Фудзияма впечатляет, поездка запомнится надолго"
     ],
     "франция": [
@@ -25,14 +29,13 @@ REVIEWS = {
         "Пицца и паста — лучшие в мире",
         "Колизей впечатляет масштабом",
         "Очень жарко летом, сложно гулять",
-        "Водители хаотичные, будьте осторожны",
+        "Водители не аккуратные, будьте осторожны",
         "Венеция уникальна, но дорого"
     ]
 }
 
 
 def ask_llm(prompt):
-    """Запрос к LLM"""
     try:
         response = requests.post(
             f"{LLM_API}/generate",
@@ -52,7 +55,6 @@ def ask_llm(prompt):
 
 
 def analyze_reviews(country):
-    """Анализ отзывов о стране через Sentiment API"""
     country_lower = country.lower()
     if country_lower not in REVIEWS:
         return f"Нет данных об отзывах для {country}"
@@ -76,12 +78,11 @@ def analyze_reviews(country):
 
 
 def extract_country(text):
-    """Извлекает название страны из текста (с учетом падежей)"""
     text_lower = text.lower()
     country_variants = {
-        "япония": ["япония", "японии", "японию", "японией", "японии"],
-        "франция": ["франция", "франции", "францию", "францией", "франции"],
-        "италия": ["италия", "италии", "италию", "италией", "италии"]
+        "япония": ["япония", "японии", "японию", "японией"],
+        "франция": ["франция", "франции", "францию", "францией"],
+        "италия": ["италия", "италии", "италию", "италией"]
     }
 
     for country, variants in country_variants.items():
@@ -91,25 +92,19 @@ def extract_country(text):
     return None
 
 
+@observe()
 def process_query(user_input):
-    """Обработка запроса пользователя"""
     user_input_lower = user_input.lower()
 
-    # Проверка: запрос об отзывах
     if "отзыв" in user_input_lower:
         country = extract_country(user_input)
         if country:
-            return analyze_reviews(country)
+            result = analyze_reviews(country)
+            return result
         return "О какой стране хотите узнать отзывы? (Япония, Франция, Италия)"
 
-    # Проверка: запрос о стране (есть название страны в запросе)
-    country = extract_country(user_input)
-    if country:
-        # Передаем запрос пользователя в LLM как есть
-        return ask_llm(user_input)
-
-    # Любой другой запрос передаем в LLM
-    return ask_llm(user_input)
+    result = ask_llm(user_input)
+    return result
 
 
 def main():
@@ -134,6 +129,8 @@ def main():
         print("\nАгент: ", end="")
         response = process_query(user_input)
         print(response)
+        print()
+        langfuse.flush()
 
 
 if __name__ == "__main__":
